@@ -398,24 +398,42 @@
   });
 
   // ---------- painel lateral: notas da pasta, busca e exclusão ----------
-  let sideNames = []; // todas as notas da pasta, antes do filtro da busca
+  let sideNotes = []; // todas as notas da pasta ({ name, tags }), antes do filtro da busca
   let sideError = '';
 
-  async function readNoteNames() {
-    const names = [];
+  // Tags são palavras com # escritas no texto, ex.: #trabalho. Sem diferenciar maiúsculas
+  const TAG_RE = /(^|\s)#(\p{L}[\p{L}\p{N}_-]*)/gu;
+  function extractTags(text) {
+    const tags = new Set();
+    for (const m of text.matchAll(TAG_RE)) tags.add(m[2].toLowerCase());
+    return [...tags].sort();
+  }
+
+  // Notas protegidas ficam sem tags: o conteúdo só é lido com a senha
+  async function readNotes() {
+    const notes = [];
     for await (const entry of dirHandle.values()) {
-      if (entry.kind === 'file' && TEXT_EXTS.includes(extOf(entry.name))) names.push(entry.name);
+      if (entry.kind === 'file' && TEXT_EXTS.includes(extOf(entry.name))) notes.push({ name: entry.name, tags: [] });
     }
-    return names.sort((a, b) => a.localeCompare(b));
+    notes.sort((a, b) => a.name.localeCompare(b.name));
+    await Promise.all(notes.map(async note => {
+      try {
+        const raw = await (await (await dirHandle.getFileHandle(note.name)).getFile()).text();
+        if (!raw.startsWith(ENC_HEADER)) note.tags = extractTags(raw);
+      } catch {
+        // arquivo ilegível: a nota aparece na lista, sem tags
+      }
+    }));
+    return notes;
   }
 
   async function refreshSidebar() {
     sideFolderName.textContent = dirPath || 'No folder chosen';
-    sideNames = [];
+    sideNotes = [];
     sideError = '';
     if (dirHandle) {
       try {
-        sideNames = await readNoteNames();
+        sideNotes = await readNotes();
       } catch (e) {
         sideError = `Could not read folder: ${e.message}`;
       }
@@ -493,13 +511,19 @@
   });
   $('help-close').addEventListener('click', closeHelp);
 
-  // Desenha a lista aplicando o termo da busca (sem diferenciar maiúsculas)
+  // Desenha a lista aplicando o termo da busca (sem diferenciar maiúsculas).
+  // Busca comum casa com nome ou tag; começando com # casa só com tags (ex.: "#trab")
   function renderSideList() {
-    const query = sideSearch.value.trim();
-    const shown = sideNames.filter(name => name.toLowerCase().includes(query.toLowerCase()));
+    const rawQuery = sideSearch.value.trim();
+    const query = rawQuery.toLowerCase();
+    const shown = sideNotes.filter(({ name, tags }) => (
+      query.startsWith('#')
+        ? tags.some(tag => tag.startsWith(query.slice(1)))
+        : name.toLowerCase().includes(query) || tags.some(tag => tag.includes(query))
+    ));
     sideList.replaceChildren();
 
-    for (const [i, name] of shown.entries()) {
+    for (const [i, { name }] of shown.entries()) {
       const li = document.createElement('li');
       li.style.setProperty('--i', i); // atraso da entrada escalonada
       li.className = name === fileName ? 'file-item side-item current' : 'file-item side-item';
@@ -530,8 +554,8 @@
 
     if (sideError) sideStatus.textContent = sideError;
     else if (!dirHandle) sideStatus.textContent = window.showDirectoryPicker ? 'Choose a folder to see your notes.' : 'Folder browsing needs Chrome or Edge.';
-    else if (!sideNames.length) sideStatus.textContent = 'No notes in this folder yet.';
-    else if (!shown.length) sideStatus.textContent = `No notes match "${query}".`;
+    else if (!sideNotes.length) sideStatus.textContent = 'No notes in this folder yet.';
+    else if (!shown.length) sideStatus.textContent = `No notes match "${rawQuery}".`;
     else sideStatus.textContent = '';
   }
 
