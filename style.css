@@ -299,23 +299,16 @@ body::after {
 
 .status.err { color: var(--err); }
 
-/* ---------- painel lateral: notas da pasta ---------- */
-.sidebar {
-  /* largura e altura acompanham o conteúdo: nomes longos alargam, muitos arquivos alongam */
-  width: fit-content;
-  min-width: 260px;
-  max-width: 420px;
-  flex-shrink: 0;
-  max-height: min(640px, 80vh);
+/* botão "show file list", logo abaixo da área de escrita */
+.file-list-row {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
-  animation: rise 0.7s 0.1s var(--ease) both;
+  justify-content: flex-start;
+}
+
+/* ---------- janela de notas (⌘O): notas da pasta ---------- */
+.notes-panel {
+  width: min(440px, 92vw);
+  max-height: min(640px, 80vh);
 }
 
 .sidebar-head {
@@ -613,23 +606,6 @@ body::after {
   cursor: not-allowed;
 }
 
-/* coluna da direita: botão "about this app" logo acima do painel de notas */
-.side-col {
-  width: fit-content;
-  min-width: 260px;
-  max-width: 420px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.side-col .sidebar {
-  width: 100%;
-  min-width: 0;
-  max-width: none;
-}
-
 .about-btn {
   position: relative;
   overflow: hidden;
@@ -690,7 +666,7 @@ body::after {
   gap: 8px;
 }
 
-.side-top .about-btn { flex: 1; }
+.side-top .about-btn { width: auto; }
 
 .help-btn {
   flex-shrink: 0;
@@ -792,11 +768,24 @@ body::after {
 }
 
 /* interruptor dia / noite, fixo no canto superior direito */
-.theme-switch {
+.top-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+/* na teia não há área de escrita: os controles ficam fixos no canto superior direito */
+body.web-mode .top-right {
   position: fixed;
   top: 16px;
   right: 16px;
   z-index: 5;
+}
+
+.theme-switch {
+  position: relative; /* o knob se posiciona dentro do switch */
+  flex-shrink: 0;
   width: 58px;
   height: 30px;
   padding: 0;
@@ -844,7 +833,6 @@ body::after {
 
 @media (max-width: 860px) {
   .workspace { flex-direction: column; align-items: stretch; }
-  .side-col { width: 100%; max-width: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1039,11 +1027,7 @@ body.web-mode #web-back {
   background: rgba(250, 247, 240, 0.95);
 }
 
-/* área de escrita com a altura da lista: a coluna da lista usa só o espaço do próprio conteúdo */
-.side-col,
-.sidebar {
-  align-self: flex-start;
-}
+
 #text {
   overflow-y: auto;
 }

@@ -65,11 +65,10 @@
   let passResolve = null;
 
   // ---------- texto que cresce com o conteúdo ----------
-  // A área de escrita tem a altura da lista de notas, com no máximo 400px
-  const NOTE_MAX_HEIGHT = 400;
-  const sidebar = document.querySelector('.sidebar');
+  // A área de escrita tem altura fixa; a lista de notas fica na janela pop-up (⌘O)
+  const NOTE_HEIGHT = 400;
   function autoGrow() {
-    textarea.style.height = `${Math.min(sidebar.offsetHeight, NOTE_MAX_HEIGHT)}px`;
+    textarea.style.height = `${NOTE_HEIGHT}px`;
   }
 
   function setStatus(text, isError = false) {
@@ -456,9 +455,26 @@
     await save();
   });
 
-  // ---------- painel lateral: notas da pasta, busca e exclusão ----------
+  // ---------- janela de notas: notas da pasta, busca e exclusão ----------
   let sideNotes = []; // todas as notas da pasta ({ name, tags }), antes do filtro da busca
   let sideError = '';
+  const notesDialog = $('notes-dialog');
+
+  // Abre a janela com a lista atualizada da pasta e foca a busca
+  function openNotes() {
+    if (!notesDialog.hidden) return;
+    notesDialog.hidden = false;
+    refreshSidebar();
+    sideSearch.focus();
+  }
+
+  function closeNotes() {
+    notesDialog.hidden = true;
+    textarea.focus();
+  }
+
+  $('notes-close').addEventListener('click', closeNotes);
+  $('show-files').addEventListener('click', openNotes);
 
   // Tags são palavras com # escritas no texto, ex.: #trabalho. Sem diferenciar maiúsculas
   const TAG_RE = /(^|\s)#(\p{L}[\p{L}\p{N}_-]*)/gu;
@@ -818,6 +834,7 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if (!passDialog.hidden) return closePassword(null);
+      if (!notesDialog.hidden) return closeNotes();
       if (!readerDialog.hidden) return closeReader();
       if (!aboutDialog.hidden) return closeAbout();
       if (!helpDialog.hidden) return closeHelp();
@@ -836,6 +853,9 @@
     } else if (key === 'e') {
       e.preventDefault();
       setMode(mode === 'edit' ? 'read' : 'edit');
+    } else if (key === 'o') {
+      e.preventDefault();
+      openNotes();
     }
   });
 
@@ -1079,7 +1099,10 @@
     }
   }
 
-  webToggle.addEventListener('click', () => setWebMode(true));
+  webToggle.addEventListener('click', () => {
+    notesDialog.hidden = true; // a teia cobre a tela: a janela de notas fecha antes
+    setWebMode(true);
+  });
   webBack.addEventListener('click', () => setWebMode(false));
 
   // Shift + clique: a primeira nota é marcada, a segunda cria ou remove a ligação manual entre as duas
