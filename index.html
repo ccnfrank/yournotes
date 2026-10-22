@@ -14,6 +14,20 @@
       <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
     </span>
   </button>
+  <canvas id="web" aria-label="Web of notes in the folder"></canvas>
+  <div class="web-top">
+    <button type="button" class="ghost-btn" id="web-back" title="Back to editor view">Back to editor view</button>
+    <div class="web-zoom-row">
+      <input type="range" id="web-zoom" class="web-zoom" min="0.3" max="4" step="0.01" value="1.5" aria-label="Zoom" title="Zoom">
+      <output id="web-zoom-value" class="web-zoom-value">150%</output>
+      <button type="button" class="ghost-btn" id="web-fit" title="Fit all notes in the window">fit to window</button>
+    </div>
+  </div>
+  <div class="web-search-pop" id="web-search-pop" role="dialog" aria-label="Search notes" hidden>
+    <input type="search" id="web-search" class="search web-search" placeholder="Search notes…" aria-label="Search notes in the web" spellcheck="false" autocomplete="off">
+    <button type="button" class="ghost-btn" id="web-search-close" title="Close search (Esc)" aria-label="Close search">×</button>
+  </div>
+  <div class="status web-status" id="web-status" aria-live="polite"></div>
   <main class="stage">
     <div class="workspace">
       <div class="main-col">
@@ -24,7 +38,6 @@
               <button type="button" class="icon-btn" id="new" title="New note (⌘N)" aria-label="New note">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
               </button>
-              <button type="button" class="ghost-btn" id="close-note" title="Close note and start an empty one" hidden>Close</button>
             </div>
             <div class="right-tools">
               <div class="tool-col">
@@ -34,10 +47,22 @@
                 <span class="tool-label">lock note</span>
               </div>
               <div class="tool-col">
+                <button type="button" class="icon-btn" id="undo" title="Undo (⌘Z)" aria-label="Undo">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+                </button>
+                <span class="tool-label">undo</span>
+              </div>
+              <div class="tool-col">
                 <button type="button" class="send-btn" id="location" title="Choose folder and save (⇧⌘S)" aria-label="Choose folder and save">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
                 </button>
                 <span class="tool-label">save</span>
+              </div>
+              <div class="tool-col">
+                <button type="button" class="icon-btn" id="close-note" title="Close note and start an empty one" aria-label="Close note">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+                <span class="tool-label">close</span>
               </div>
             </div>
           </div>
@@ -54,6 +79,7 @@
         <div class="sidebar-head">
           <span>Notes</span>
           <button type="button" class="ghost-btn" id="side-folder" title="Choose the folder to browse">Folder…</button>
+          <button type="button" class="ghost-btn web-toggle" id="web-toggle" title="View the notes as a graph">Graph view mode</button>
         </div>
         <div class="muted ellipsis side-folder-name" id="side-folder-name"></div>
         <input type="search" id="side-search" class="search" placeholder="Search notes…" aria-label="Search notes" spellcheck="false" autocomplete="off">
@@ -131,7 +157,12 @@
       <div class="reader-text" id="reader-text"></div>
       <div class="actions">
         <span class="spacer"></span>
-        <button type="button" class="ghost-btn" id="reader-close">Close</button>
+        <div class="tool-col">
+          <button type="button" class="icon-btn" id="reader-close" title="Close" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+          <span class="tool-label">close</span>
+        </div>
       </div>
     </div>
   </div>
@@ -156,33 +187,63 @@
 
       <div class="help-body">
         <section class="help-section">
-          <h3>Writing</h3>
+          <h3>Creating notes</h3>
           <ul>
-            <li>The text box grows as you type.</li>
-            <li><b>+</b> starts a new empty note. If the current note has unsaved changes, you are asked first.</li>
-            <li>An asterisk (*) in the window title means unsaved changes.</li>
-            <li><b>Close</b> appears while you read an open note. It closes the note and leaves an empty editor.</li>
-          </ul>
-        </section>
-
-        <section class="help-section">
-          <h3>Read and edit</h3>
-          <ul>
-            <li>Click a note name in the list to open it in read mode (read-only text).</li>
-            <li>The <b>eye</b> icon next to a note opens it in a read-only window.</li>
-            <li>The <b>pencil</b> icon opens the note in edit mode.</li>
-            <li>In the editor, switch between read and edit mode with <kbd>⌘E</kbd>.</li>
+            <li>The text box in the editor is where you write. It is as tall as the list of notes, up to 400 px.</li>
+            <li>Press <b>+</b> (or <kbd>⌘N</kbd>) to start a new empty note. If the current note has unsaved changes, you are asked first.</li>
+            <li>A new note has no file yet. Save it to give it a name and a place in a folder.</li>
           </ul>
         </section>
 
         <section class="help-section">
           <h3>Saving and folders</h3>
           <ul>
-            <li>The <b>arrow</b> button (save) opens the save window.</li>
-            <li>Choose a folder with <b>Choose…</b>. Folders need Chrome or Edge. Other browsers download the file.</li>
+            <li>Choose a folder with <b>Folder…</b> in the notes list, or with <b>Choose…</b> in the save window. Folders need Chrome or Edge. Other browsers download the file instead.</li>
+            <li>Press the <b>save</b> arrow (or <kbd>⌘S</kbd>) to save into the folder. <kbd>⇧⌘S</kbd> opens the save window, where you can pick the folder and the name.</li>
+            <li>Type a name in <b>Name</b>. If you leave out the extension, <b>.txt</b> is added. The app reads and writes <b>.txt</b>, <b>.md</b>, <b>.text</b> and <b>.log</b> files.</li>
             <li><b>New folder</b> creates a subfolder inside the current folder and saves there from then on.</li>
-            <li>Type a name in <b>Name</b>. If you leave out the extension, <b>.txt</b> is added.</li>
-            <li><b>Open file…</b> opens a file from your computer, in any browser.</li>
+            <li><b>Open file…</b> opens a text file from your computer, in any browser.</li>
+            <li>Once a note has a file in the folder, it is <b>saved automatically</b> one second after you stop typing, while the note is in edit mode.</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h3>Viewing and editing</h3>
+          <ul>
+            <li>Click a note's row in the list to open it in read mode. Read mode shows the text without allowing changes.</li>
+            <li>The <b>eye</b> icon, captioned <b>view</b>, opens the note in a read-only window. Close it with <b>close</b> or <kbd>Esc</kbd>.</li>
+            <li>The <b>pencil</b> icon, captioned <b>edit</b>, opens the note in edit mode.</li>
+            <li>In the editor, switch between read and edit mode with <kbd>⌘E</kbd>.</li>
+            <li>The <b>close</b> button in the editor closes the current note and leaves an empty editor. If there are unsaved changes, you are asked first.</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h3>Renaming</h3>
+          <ul>
+            <li>Click a note's <b>name</b> in the list to rename it. Type the new name and press <kbd>Enter</kbd> to confirm, or <kbd>Esc</kbd> to cancel. Clicking anywhere else also cancels.</li>
+            <li>A name without an extension gets <b>.txt</b>. Only <b>.txt</b>, <b>.md</b>, <b>.text</b> and <b>.log</b> are allowed.</li>
+            <li>If a file with the new name already exists, the rename is refused.</li>
+            <li>If the note is open in the editor, it stays open under the new name. Its links in the graph follow the new name.</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h3>Deleting</h3>
+          <ul>
+            <li>The <b>trash it</b> button, the × on the right of each row, deletes the note after you confirm. This cannot be undone.</li>
+            <li>In graph view, click a point to select it, then press <kbd>Delete</kbd> to delete that note after you confirm.</li>
+            <li>Deleting a protected note asks for its password first.</li>
+            <li>The links that involved a deleted note are removed from <b>links.json</b>.</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h3>Undo</h3>
+          <ul>
+            <li>The <b>undo</b> button, to the right of <b>lock note</b>, takes back your last changes in the editor. It goes back up to <b>10</b> changes.</li>
+            <li>Typing is grouped: a pause of one second separates one change from the next, so one undo takes back a whole phrase, not a single letter.</li>
+            <li>Undo works in edit mode only. Opening, creating or closing a note clears the undo history.</li>
           </ul>
         </section>
 
@@ -190,18 +251,21 @@
           <h3>Passwords</h3>
           <ul>
             <li>The <b>lock note</b> button sets, changes or removes the password of the current note.</li>
-            <li>The password is applied when you save. Protected notes are saved encrypted.</li>
-            <li>Opening a protected note, or deleting one, asks for its password first.</li>
+            <li>The password is applied when the note is saved. Protected notes are saved encrypted.</li>
+            <li>Opening a protected note, or deleting one, asks for its password first. A wrong password is refused.</li>
+            <li>To remove the password, open <b>lock note</b> and choose <b>Remove</b>. The note is then saved as plain text.</li>
             <li>There is no password recovery. If you forget the password, the note cannot be read.</li>
+            <li>Protected notes are listed without tags and without links from their text, so they do not take part in tag or mention links.</li>
           </ul>
         </section>
 
         <section class="help-section">
-          <h3>Notes list</h3>
+          <h3>Search</h3>
           <ul>
-            <li>The search box filters the notes in the current folder by name or tag.</li>
-            <li>The <b>×</b> button deletes a note after you confirm.</li>
-            <li>The note that is open is marked with a pulsing dot.</li>
+            <li>The search box above the list filters the notes in the current folder by name or tag.</li>
+            <li>Without <b>#</b>, the search matches names and tags, so <b>work</b> finds notes named <i>work</i> and notes tagged <b>#work</b>.</li>
+            <li>With <b>#</b>, the search matches only tags: <b>#wo</b> finds <b>#work</b>.</li>
+            <li>In graph view the same search is in a window: press <kbd>⌘F</kbd> on a Mac, or <kbd>Alt+F</kbd> on Windows and Linux. See <b>Graph view mode</b>.</li>
           </ul>
         </section>
 
@@ -211,10 +275,47 @@
             <li>To tag a note, write a word starting with <b>#</b> anywhere in its text, like <b>#work</b> or <b>#ideia-2</b>. Tags can use letters, numbers, <b>-</b> and <b>_</b>.</li>
             <li>A <b>#</b> followed by a space or a number is not a tag, so <b># title</b> and <b>#1</b> are ignored.</li>
             <li>Tags are not case sensitive: <b>#Work</b> and <b>#work</b> are the same tag.</li>
-            <li>To find notes by tag, type <b>#</b> and the tag in the search box, like <b>#work</b>. Only notes with a matching tag are shown.</li>
-            <li>Typing part of a tag works too: <b>#wo</b> finds <b>#work</b>.</li>
-            <li>Without <b>#</b>, the search box also matches tags, so <b>work</b> finds notes tagged <b>#work</b>.</li>
-            <li>Protected notes are listed without tags, so tag search skips them.</li>
+            <li>A note can have as many tags as you like.</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h3>Links between notes</h3>
+          <ul>
+            <li><b>Shared tags:</b> notes that have at least one tag in common are linked automatically.</li>
+            <li><b>Mentions:</b> when a note's text contains the name of another note, the two are linked. For example, a note that says <b>see b</b> is linked to <b>b.txt</b>. The name is not case sensitive, the extension is optional, and it must be a whole word.</li>
+            <li>A note that mentions several notes is linked to all of them.</li>
+            <li><b>Manual links:</b> in graph view, hold <kbd>Shift</kbd> and click one point, then another, to link them. Shift + click the same pair again to remove the link.</li>
+            <li>Manual links are saved in a file called <b>links.json</b> inside the folder, next to the notes. Automatic links are not saved; they come from the tags and the text.</li>
+            <li>A common word can be a note name too. For example, a note named <b>a</b> is mentioned by any text with the word <i>a</i>. Name short notes with care.</li>
+            <li>To remove a link that came from a tag or a mention, change the tag or the text. Shift + click removes manual links only.</li>
+          </ul>
+        </section>
+
+        <p class="help-new"><b>New in version 0.3</b></p>
+
+        <section class="help-section">
+          <h3>Graph view mode</h3>
+          <ul>
+            <li>Click <b>Graph view mode</b>, next to <b>Folder…</b>, to see the notes as a web. Each note is a point, and linked points are joined by lines.</li>
+            <li>Lines in a brighter colour are manual links. The others come from shared tags or mentions.</li>
+            <li>Drag a point to move it. The web rearranges itself around it. Points are kept out of the search window and the zoom bar.</li>
+            <li>Click a point, or the name next to it, to read the note in a read-only window. The web stays open.</li>
+            <li><kbd>Shift</kbd> + click one point, then another, to link them, as described in <b>Links between notes</b>.</li>
+            <li>When the graph opens, the notes are centred in the window at 150%.</li>
+            <li>Zoom with the mouse wheel, centred on the cursor, or with the slider under the top bar. The percentage shows the current zoom.</li>
+            <li><b>fit to window</b>, next to the slider, zooms and centres the graph so that all the notes fit in the window.</li>
+            <li>Hold the right mouse button and drag to move the whole web around.</li>
+            <li>Press <kbd>⌘F</kbd> on a Mac, or <kbd>Alt+F</kbd> on Windows and Linux, to open the search window. Notes that match stay bright and the others are dimmed. Press <kbd>Esc</kbd> to close the window. The search stays active until you clear it.</li>
+            <li>Select a point by clicking it, then press <kbd>Delete</kbd> to delete that note after you confirm.</li>
+            <li>Click <b>Back to editor view</b> at the top to return to the list and the editor.</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h3>Themes</h3>
+          <ul>
+            <li>The switch in the top-right corner changes between night and day. Your choice is remembered.</li>
           </ul>
         </section>
 
@@ -226,9 +327,13 @@
             <li><kbd>⇧⌘S</kbd> open the save window</li>
             <li><kbd>⌘E</kbd> switch read and edit mode</li>
             <li><kbd>⌘Enter</kbd> save from inside the editor</li>
-            <li><kbd>Esc</kbd> close the open window</li>
+            <li><kbd>⌘F</kbd> (Mac) or <kbd>Alt+F</kbd> (Windows and Linux): open the search window, in graph view</li>
+            <li><kbd>Delete</kbd>: delete the selected note, in graph view</li>
+            <li><kbd>Enter</kbd> confirm a rename; <kbd>Esc</kbd> cancel it</li>
+            <li><kbd>Esc</kbd> close the open window, or the graph search</li>
           </ul>
         </section>
+
       </div>
 
       <div class="actions">
@@ -239,6 +344,8 @@
   </div>
 
   <input type="file" id="file-input" accept=".txt,.md,.text,.log" hidden>
+  <script src="links.js"></script>
+  <script src="graph.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

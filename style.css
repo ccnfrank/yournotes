@@ -855,3 +855,216 @@ body::after {
     transition: none !important;
   }
 }
+
+/* ---------- teia de notas (v3): modo de visualização ---------- */
+#web,
+.web-top,
+.web-status {
+  display: none;
+}
+body.web-mode #web,
+body.web-mode .web-top,
+body.web-mode .web-status {
+  display: block;
+}
+body.web-mode .workspace {
+  display: none;
+}
+#web {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none; /* cliques passam para a janela, que trata os pontos */
+}
+.web-top {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.web-search {
+  width: min(320px, 60vw);
+}
+.web-status {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+/* ---------- renomear nota pela lista ---------- */
+.rename-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  outline: none;
+  padding: 0;
+}
+
+/* ---------- legenda abaixo dos ícones da lista ---------- */
+.item-action {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+.item-caption {
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+/* ---------- botão Graph view mode ao lado de Folder… ---------- */
+.web-toggle {
+  white-space: nowrap;
+}
+/* barra da teia: flex só no modo teia, para não sobrescrever o display: none do editor */
+body.web-mode .web-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---------- Graph view: busca no centro, zoom horizontal logo abaixo, botão de volta no canto ---------- */
+#web-back {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+}
+.web-top {
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.web-search {
+  width: min(480px, 80vw);
+  font-size: 18px;
+  padding: 12px 16px;
+}
+/* slider de zoom: trilha visível e polegar redondo, nas cores do tema */
+.web-zoom {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  margin: 0;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  outline: none;
+  cursor: pointer;
+}
+.web-zoom::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 0;
+  background: #ffb3a0;
+}
+.web-zoom::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 0;
+  background: #ffb3a0;
+}
+:root[data-theme="day"] .web-zoom {
+  background: rgba(0, 0, 0, 0.3);
+}
+:root[data-theme="day"] .web-zoom::-webkit-slider-thumb,
+:root[data-theme="day"] .web-zoom::-moz-range-thumb {
+  background: #7a2e12;
+}
+
+/* botão de volta só existe no Graph view */
+#web-back {
+  display: none;
+}
+body.web-mode #web-back {
+  display: block;
+}
+
+/* porcentagem de zoom, logo abaixo do slider */
+.web-zoom-value {
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* busca e botão de volta na mesma linha; o botão deixa de ser fixo no canto */
+.web-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+#web-back {
+  position: static;
+  white-space: nowrap;
+}
+
+/* janela flutuante de busca do Graph view (⌘F no Mac, Alt+F nos outros) */
+.web-search-pop {
+  position: fixed;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(20, 18, 16, 0.92);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.web-search-pop[hidden] {
+  display: none;
+}
+:root[data-theme="day"] .web-search-pop {
+  background: rgba(250, 247, 240, 0.95);
+}
+
+/* área de escrita com a altura da lista: a coluna da lista usa só o espaço do próprio conteúdo */
+.side-col,
+.sidebar {
+  align-self: flex-start;
+}
+#text {
+  overflow-y: auto;
+}
+
+/* slider, porcentagem e botão fit to window na mesma linha */
+.web-top {
+  width: min(480px, 80vw);
+}
+.web-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.web-zoom-row .web-zoom {
+  flex: 1;
+  min-width: 0;
+}
+.web-zoom-row .web-zoom-value {
+  min-width: 48px;
+  text-align: right;
+}
+.web-zoom-row #web-fit {
+  white-space: nowrap;
+}
