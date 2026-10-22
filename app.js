@@ -2,7 +2,7 @@
   'use strict';
 
   const ENC_HEADER = 'ENCRYPTED-NOTE:v1\n'; // primeira linha de arquivo protegido por senha
-  const TEXT_EXTS = ['.txt', '.md', '.text', '.log'];
+  const TEXT_EXTS = ['.txt', '.md', '.text', '.rtf', '.log'];
 
   const $ = id => document.getElementById(id);
   const textarea = $('text');
@@ -286,7 +286,7 @@
   // ---------- abrir ----------
   async function loadFile(file, handle, startMode = 'read') {
     const raw = await file.text();
-    let text = raw;
+    let text = plainText(raw, file.name);
     let password = null;
     if (raw.startsWith(ENC_HEADER)) {
       const result = await unlock(raw.slice(ENC_HEADER.length));
@@ -309,6 +309,9 @@
 
   // ---------- pop-up de pasta e nome ----------
   const extOf = name => '.' + name.split('.').pop().toLowerCase();
+  // .rtf é lido como texto puro e gravado de volta como RTF; os demais arquivos já são texto
+  const plainText = (raw, name) => (extOf(name) === '.rtf' ? Rtf.rtfToText(raw) : raw);
+  const storedText = (text, name) => (extOf(name) === '.rtf' ? Rtf.textToRtf(text) : text);
 
   // Nome final: sem extensão vira .txt
   function chosenFileName() {
@@ -496,8 +499,9 @@
       try {
         const raw = await (await (await dirHandle.getFileHandle(note.name)).getFile()).text();
         if (!raw.startsWith(ENC_HEADER)) {
-          note.tags = extractTags(raw);
-          note.mentions = Links.mentionedNames(raw, names); // notas citadas no texto
+          const text = plainText(raw, note.name);
+          note.tags = extractTags(text);
+          note.mentions = Links.mentionedNames(text, names); // notas citadas no texto
         }
       } catch {
         // arquivo ilegível: a nota aparece na lista, sem tags
@@ -540,7 +544,7 @@
     if (!dirHandle) return;
     try {
       const raw = await (await (await dirHandle.getFileHandle(name)).getFile()).text();
-      let text = raw;
+      let text = plainText(raw, name);
       if (raw.startsWith(ENC_HEADER)) {
         const result = await unlock(raw.slice(ENC_HEADER.length));
         if (!result) return;
@@ -709,7 +713,7 @@
     }
     const newName = /\.[a-z0-9]+$/i.test(typed) ? typed : `${typed}.txt`;
     if (!TEXT_EXTS.includes(extOf(newName))) {
-      setStatus('Use .txt, .md, .text or .log.', true);
+      setStatus('Use .txt, .md, .text, .rtf or .log.', true);
       return renderSideList();
     }
     try {
@@ -792,7 +796,7 @@
   async function save() {
     const text = textarea.value;
     try {
-      const body = filePassword !== null ? ENC_HEADER + await encryptText(filePassword, text) : text;
+      const body = filePassword !== null ? ENC_HEADER + await encryptText(filePassword, text) : storedText(text, fileName);
       if (dirHandle) {
         if (fileName !== savedName && await fileExists(dirHandle, fileName) && !confirm(`"${fileName}" already exists. Replace it?`)) return;
         const handle = await dirHandle.getFileHandle(fileName, { create: true });

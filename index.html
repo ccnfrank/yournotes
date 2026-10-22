@@ -202,6 +202,7 @@
             <li>The text box in the editor is where you write. It is 400 px tall.</li>
             <li>Press <b>+</b> (or <kbd>⌘N</kbd>) to start a new empty note. If the current note has unsaved changes, you are asked first.</li>
             <li>A new note has no file yet. Save it to give it a name and a place in a folder.</li>
+            <li>Notes can be <b>.txt</b>, <b>.md</b>, <b>.text</b>, <b>.log</b> or <b>.rtf</b>. An <b>.rtf</b> note opens as plain text, and its formatting (bold, fonts, colours) is not kept when you save it.</li>
           </ul>
         </section>
 
@@ -354,7 +355,8 @@
     </div>
   </div>
 
-  <input type="file" id="file-input" accept=".txt,.md,.text,.log" hidden>
+  <input type="file" id="file-input" accept=".txt,.md,.text,.rtf,.log" hidden>
+  <script src="rtf.js"></script>
   <script src="links.js"></script>
   <script src="graph.js"></script>
   <script src="app.js"></script>
