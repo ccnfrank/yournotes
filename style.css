@@ -74,14 +74,14 @@ body::after {
 body::before {
   top: -18vmax;
   left: -12vmax;
-  background: radial-gradient(circle, #1f8a9e 0%, transparent 70%);
+  background: radial-gradient(circle, #8a8a8e 0%, transparent 70%);
   animation: drift-a 26s ease-in-out infinite alternate;
 }
 
 body::after {
   bottom: -20vmax;
   right: -14vmax;
-  background: radial-gradient(circle, #6b4fa8 0%, transparent 70%);
+  background: radial-gradient(circle, #5c5c60 0%, transparent 70%);
   animation: drift-b 32s ease-in-out infinite alternate;
 }
 
