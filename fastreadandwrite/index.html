@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Busca local</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Aplica o tema salvo antes da página aparecer, para não piscar.
+    try {
+      if (localStorage.getItem("theme") === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    } catch (error) {
+      // Sem acesso ao armazenamento: segue no tema escuro.
+    }
+  </script>
+</head>
+<body>
+  <main class="stage">
+    <div class="search-row">
+      <div class="search" role="search">
+        <div class="search__action">
+          <button class="search__icon-btn" type="button" aria-label="Ajustes de busca">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+              <line x1="4" y1="7" x2="11" y2="7"/>
+              <line x1="15" y1="7" x2="20" y2="7"/>
+              <circle cx="13" cy="7" r="2"/>
+              <line x1="4" y1="17" x2="7" y2="17"/>
+              <line x1="11" y1="17" x2="20" y2="17"/>
+              <circle cx="9" cy="17" r="2"/>
+            </svg>
+          </button>
+        </div>
+
+        <label class="search__label">
+          <span class="sr-only">Pergunta ou busca</span>
+          <input class="search__input" id="search-input" type="text" placeholder="Faça uma pergunta ou crie algo" autocomplete="off">
+        </label>
+
+        <div class="search__meta-group">
+          <span class="search__meta" id="file-count" hidden></span>
+        </div>
+
+        <div class="search__action">
+          <button class="search__send" id="folder-btn" type="button" aria-label="Escolher diretório" title="Escolher diretório">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="19" x2="12" y2="5"/>
+              <polyline points="5 12 12 5 19 12"/>
+            </svg>
+          </button>
+          <span class="search__caption">Folder</span>
+        </div>
+
+        <div class="search__action">
+          <button class="search__icon-btn search__new-btn" id="new-btn" type="button" aria-label="Criar novo arquivo" title="Criar novo arquivo">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/>
+              <polyline points="14 3 14 8 19 8"/>
+              <line x1="12" y1="11" x2="12" y2="17"/>
+              <line x1="9" y1="14" x2="15" y2="14"/>
+            </svg>
+          </button>
+          <span class="search__caption">New</span>
+        </div>
+      </div>
+
+      <div class="search__action search__action--outside">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Alternar tema claro e escuro" title="Alternar tema claro e escuro">
+          <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <line x1="12" y1="2" x2="12" y2="4.5"/>
+            <line x1="12" y1="19.5" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="4.5" y2="12"/>
+            <line x1="19.5" y1="12" x2="22" y2="12"/>
+            <line x1="4.9" y1="4.9" x2="6.6" y2="6.6"/>
+            <line x1="17.4" y1="17.4" x2="19.1" y2="19.1"/>
+            <line x1="4.9" y1="19.1" x2="6.6" y2="17.4"/>
+            <line x1="17.4" y1="6.6" x2="19.1" y2="4.9"/>
+          </svg>
+          <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>
+          </svg>
+        </button>
+        <span class="search__caption">Tema</span>
+      </div>
+    </div>
+
+    <ul class="results" id="results" hidden></ul>
+  </main>
+
+  <dialog class="doc-dialog" id="doc-dialog" aria-labelledby="doc-title">
+    <header class="doc-dialog__header">
+      <h2 class="doc-dialog__title" id="doc-title"></h2>
+      <div class="doc-dialog__actions">
+        <button class="doc-dialog__text-btn" id="doc-edit" type="button">Editar</button>
+        <button class="doc-dialog__text-btn" id="doc-cancel" type="button" hidden>Cancelar</button>
+        <button class="doc-dialog__text-btn doc-dialog__text-btn--primary" id="doc-save" type="button" hidden>Salvar</button>
+        <button class="doc-dialog__close" id="doc-close" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+    <div class="doc-dialog__find" id="doc-find-row">
+      <div class="doc-dialog__find-field">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5"/>
+          <line x1="16" y1="16" x2="20.5" y2="20.5"/>
+        </svg>
+        <input class="doc-dialog__find-input" id="doc-find" type="search" placeholder="Search" aria-label="Search" autocomplete="off">
+      </div>
+      <span class="doc-dialog__find-count" id="doc-find-count" aria-live="polite"></span>
+      <div class="doc-dialog__size">
+        <button class="doc-dialog__size-btn" id="doc-font-down" type="button" aria-label="Diminuir fonte" title="Diminuir fonte">A−</button>
+        <button class="doc-dialog__size-btn" id="doc-font-up" type="button" aria-label="Aumentar fonte" title="Aumentar fonte">A+</button>
+      </div>
+    </div>
+    <form class="doc-dialog__lock" id="doc-lock" hidden>
+      <p class="doc-dialog__lock-text" id="doc-lock-text"></p>
+      <input class="doc-dialog__find-input" id="doc-lock-pass" type="password" placeholder="Senha" aria-label="Senha" autocomplete="new-password">
+      <input class="doc-dialog__find-input" id="doc-lock-confirm" type="password" placeholder="Confirmar senha" aria-label="Confirmar senha" autocomplete="new-password" hidden>
+      <p class="doc-dialog__lock-error" id="doc-lock-error" role="alert"></p>
+      <div class="doc-dialog__lock-actions">
+        <button class="doc-dialog__text-btn" id="doc-lock-cancel" type="button">Cancelar</button>
+        <button class="doc-dialog__text-btn doc-dialog__text-btn--primary" id="doc-lock-submit" type="submit">Proteger</button>
+      </div>
+    </form>
+    <div class="doc-dialog__toolbar" id="doc-toolbar" role="toolbar" aria-label="Formatação">
+      <div class="doc-dialog__edit-tools" id="doc-edit-tools">
+      <button class="doc-dialog__format" type="button" data-command="bold" aria-label="Negrito" title="Negrito (Ctrl+B)"><b>B</b></button>
+      <button class="doc-dialog__format" type="button" data-command="italic" aria-label="Itálico" title="Itálico (Ctrl+I)"><i>I</i></button>
+      <button class="doc-dialog__format" type="button" data-command="underline" aria-label="Sublinhado" title="Sublinhado (Ctrl+U)"><u>U</u></button>
+      <button class="doc-dialog__format" type="button" data-command="strikeThrough" aria-label="Riscado" title="Riscado"><s>S</s></button>
+      <span class="doc-dialog__sep" aria-hidden="true"></span>
+      <button class="doc-dialog__format" type="button" data-command="justifyLeft" aria-label="Alinhar à esquerda" title="Alinhar à esquerda">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+      </button>
+      <button class="doc-dialog__format" type="button" data-command="justifyCenter" aria-label="Centralizar" title="Centralizar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="10" x2="17" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="7" y1="18" x2="17" y2="18"/></svg>
+      </button>
+      <button class="doc-dialog__format" type="button" data-command="justifyRight" aria-label="Alinhar à direita" title="Alinhar à direita">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="10" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="10" y1="18" x2="20" y2="18"/></svg>
+      </button>
+      <button class="doc-dialog__format" type="button" data-command="justifyFull" aria-label="Justificar" title="Justificar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
+      <span class="doc-dialog__sep" aria-hidden="true"></span>
+      <select class="doc-dialog__select" id="doc-font-size" aria-label="Tamanho da fonte" title="Tamanho da fonte">
+        <option value="12">12</option>
+        <option value="14">14</option>
+        <option value="15" selected>15</option>
+        <option value="16">16</option>
+        <option value="18">18</option>
+        <option value="20">20</option>
+        <option value="24">24</option>
+        <option value="28">28</option>
+        <option value="32">32</option>
+      </select>
+      </div>
+      <span class="doc-dialog__sep" aria-hidden="true"></span>
+      <button class="doc-dialog__icon-btn" id="doc-protect" type="button" aria-label="Proteger com senha" title="Proteger com senha">
+        <svg class="doc-dialog__lock-icon doc-dialog__lock-icon--open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="5" y="11" width="14" height="10" rx="2"/>
+          <path d="M8 11V7.5a4 4 0 0 1 7.9-.8"/>
+        </svg>
+        <svg class="doc-dialog__lock-icon doc-dialog__lock-icon--closed" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="5" y="11" width="14" height="10" rx="2"/>
+          <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+        </svg>
+      </button>
+    </div>
+    <div class="doc-dialog__body">
+      <div class="doc-dialog__text" id="doc-text"></div>
+      <div class="doc-dialog__editor" id="doc-editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Conteúdo do arquivo" hidden></div>
+    </div>
+  </dialog>
+
+  <input class="sr-only" id="folder-input" type="file" webkitdirectory directory multiple tabindex="-1" aria-hidden="true">
+
+  <script src="script.js"></script>
+</body>
+</html>
