@@ -3,9 +3,10 @@
 
   const ENC_HEADER = 'ENCRYPTED-NOTE:v1\n'; // primeira linha de arquivo protegido por senha
   const TEXT_EXTS = ['.txt', '.md', '.text', '.rtf', '.log'];
+  const EXPORT_FORMATS = ['.txt', '.md', '.rtf']; // formatos oferecidos na janela de salvar
 
   const $ = id => document.getElementById(id);
-  const textarea = $('text');
+  const editor = $('text');
   const composer = $('composer');
   const statusEl = $('status');
   const newBtn = $('new');
@@ -23,6 +24,7 @@
   const folderBtn = $('folder-btn');
   const folderName = $('folder-name');
   const fileNameInput = $('file-name');
+  const fileFormat = $('file-format');
   const fileList = $('file-list');
   const locationStatus = $('location-status');
   const fileInput = $('file-input');
@@ -68,7 +70,26 @@
   // A área de escrita tem altura fixa; a lista de notas fica na janela pop-up (⌘O)
   const NOTE_HEIGHT = 400;
   function autoGrow() {
-    textarea.style.height = `${NOTE_HEIGHT}px`;
+    editor.style.height = `${NOTE_HEIGHT}px`;
+  }
+
+  // ---------- conteúdo do editor ----------
+  // O editor guarda HTML (com a formatação). O arquivo recebe o formato da extensão:
+  // .rtf guarda a formatação; .txt, .md e os demais guardam só o texto
+  const snapshot = () => editor.innerHTML;
+  const hasFormatting = () => editor.querySelector('b, i, s, strike, font, span, [style]') !== null;
+
+  // body é o conteúdo lido do arquivo (já descriptografado, se for o caso)
+  function setContent(body, name) {
+    const rich = extOf(name) === '.rtf' && body.startsWith('{\\rtf');
+    if (rich) editor.innerHTML = Rtf.rtfToHtml(body);
+    else editor.textContent = body;
+    editor.classList.toggle('empty', editor.textContent === '');
+  }
+
+  // Texto a gravar no arquivo, no formato da extensão
+  function contentToBody(name) {
+    return extOf(name) === '.rtf' ? Rtf.htmlToRtf(editor) : editor.innerText;
   }
 
   function setStatus(text, isError = false) {
@@ -82,7 +103,8 @@
 
   function refresh() {
     autoGrow();
-    dirty = textarea.value !== lastSaved;
+    dirty = snapshot() !== lastSaved;
+    editor.classList.toggle('empty', editor.textContent === '');
     document.title = `${fileName}${dirty ? ' *' : ''} — Notes`;
     lockBtn.classList.toggle('active', filePassword !== null);
     lockBtn.title = filePassword !== null ? 'Note is password protected (click to change)' : 'Set note password';
@@ -108,7 +130,7 @@
 
   function resetHistory() {
     undoStack = [];
-    lastText = textarea.value;
+    lastText = snapshot();
     lastInputAt = 0;
   }
 
@@ -119,19 +141,19 @@
       if (undoStack.length > UNDO_LIMIT) undoStack.shift();
     }
     lastInputAt = now;
-    lastText = textarea.value;
+    lastText = snapshot();
     refresh();
     scheduleAutoSave();
   }
 
   function undo() {
     if (mode !== 'edit' || !undoStack.length) return;
-    textarea.value = undoStack.pop();
-    lastText = textarea.value;
+    editor.innerHTML = undoStack.pop();
+    lastText = snapshot();
     lastInputAt = 0;
     refresh();
     scheduleAutoSave();
-    textarea.focus();
+    editor.focus();
   }
 
   function confirmDiscard() {
@@ -143,9 +165,9 @@
     mode = next;
     const reading = mode === 'read';
     composer.classList.toggle('reading', reading);
-    textarea.readOnly = reading;
+    editor.contentEditable = String(!reading);
     autoGrow();
-    if (!reading) textarea.focus();
+    if (!reading) editor.focus();
   }
 
   // ---------- fechar nota: esvazia o editor e volta ao modo edição ----------
@@ -154,8 +176,8 @@
     fileName = 'untitled.txt';
     savedName = null;
     filePassword = null;
-    textarea.value = '';
-    lastSaved = '';
+    setContent('', 'untitled.txt');
+    lastSaved = snapshot();
     resetHistory();
     refresh();
     renderSideList();
@@ -169,14 +191,14 @@
     fileName = 'untitled.txt';
     savedName = null;
     filePassword = null;
-    textarea.value = '';
-    lastSaved = '';
+    setContent('', 'untitled.txt');
+    lastSaved = snapshot();
     resetHistory();
     refresh();
     renderSideList();
     setMode('edit');
     setStatus('New note');
-    textarea.focus();
+    editor.focus();
   }
 
   // ---------- criptografia (AES-GCM, chave via PBKDF2) ----------
@@ -244,7 +266,7 @@
     const resolve = passResolve;
     passResolve = null;
     if (resolve) resolve(result);
-    textarea.focus();
+    editor.focus();
   }
 
   passForm.addEventListener('submit', e => {
@@ -286,19 +308,19 @@
   // ---------- abrir ----------
   async function loadFile(file, handle, startMode = 'read') {
     const raw = await file.text();
-    let text = plainText(raw, file.name);
+    let body = raw;
     let password = null;
     if (raw.startsWith(ENC_HEADER)) {
       const result = await unlock(raw.slice(ENC_HEADER.length));
       if (!result) return false;
-      text = result.text;
+      body = result.text;
       password = result.password;
     }
     fileName = file.name;
     savedName = handle ? file.name : null;
     filePassword = password;
-    textarea.value = text;
-    lastSaved = text;
+    setContent(body, file.name);
+    lastSaved = snapshot();
     resetHistory();
     refresh();
     renderSideList();
@@ -309,15 +331,29 @@
 
   // ---------- pop-up de pasta e nome ----------
   const extOf = name => '.' + name.split('.').pop().toLowerCase();
-  // .rtf é lido como texto puro e gravado de volta como RTF; os demais arquivos já são texto
-  const plainText = (raw, name) => (extOf(name) === '.rtf' ? Rtf.rtfToText(raw) : raw);
-  const storedText = (text, name) => (extOf(name) === '.rtf' ? Rtf.textToRtf(text) : text);
+  // Texto puro de um arquivo lido (tags, menções e janela de leitura)
+  const plainText = (raw, name) => (extOf(name) === '.rtf' && raw.startsWith('{\\rtf') ? Rtf.rtfToText(raw) : raw);
+  const extensionOf = name => (name.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
 
-  // Nome final: sem extensão vira .txt
+  // Nome final: a extensão digitada vale; sem extensão de nota, usa o formato escolhido
   function chosenFileName() {
     const name = fileNameInput.value.trim() || 'untitled';
-    return /\.[a-z0-9]+$/i.test(name) ? name : `${name}.txt`;
+    return TEXT_EXTS.includes(extensionOf(name)) ? name : `${name}${fileFormat.value}`;
   }
+
+  // Formato do pop-up acompanha a extensão do nome; trocar o formato troca a extensão
+  function syncFormatWithName() {
+    const ext = extensionOf(fileNameInput.value.trim());
+    if (EXPORT_FORMATS.includes(ext)) fileFormat.value = ext;
+  }
+
+  fileFormat.addEventListener('change', () => {
+    const name = fileNameInput.value.trim() || 'untitled';
+    const ext = extensionOf(name);
+    const base = TEXT_EXTS.includes(ext) ? name.slice(0, -ext.length) : name;
+    fileNameInput.value = `${base}${fileFormat.value}`;
+  });
+  fileNameInput.addEventListener('input', syncFormatWithName);
 
   async function listFiles() {
     fileList.replaceChildren();
@@ -362,6 +398,7 @@
 
   function openLocation() {
     fileNameInput.value = fileName;
+    fileFormat.value = EXPORT_FORMATS.includes(extOf(fileName)) ? extOf(fileName) : '.txt';
     folderName.textContent = dirPath || 'Downloads (browser default)';
     folderBtn.disabled = !window.showDirectoryPicker;
     newFolderBtn.disabled = !dirHandle;
@@ -375,7 +412,7 @@
 
   function closeLocation() {
     locationDialog.hidden = true;
-    textarea.focus();
+    editor.focus();
   }
 
   locationBtn.addEventListener('click', openLocation);
@@ -473,7 +510,7 @@
 
   function closeNotes() {
     notesDialog.hidden = true;
-    textarea.focus();
+    editor.focus();
   }
 
   $('notes-close').addEventListener('click', closeNotes);
@@ -548,7 +585,7 @@
       if (raw.startsWith(ENC_HEADER)) {
         const result = await unlock(raw.slice(ENC_HEADER.length));
         if (!result) return;
-        text = result.text;
+        text = plainText(result.text, name);
       }
       readerTitle.textContent = name;
       readerText.textContent = text;
@@ -561,7 +598,7 @@
 
   function closeReader() {
     readerDialog.hidden = true;
-    textarea.focus();
+    editor.focus();
   }
 
   $('reader-close').addEventListener('click', closeReader);
@@ -572,7 +609,7 @@
 
   function closeAbout() {
     aboutDialog.hidden = true;
-    textarea.focus();
+    editor.focus();
   }
 
   aboutBtn.addEventListener('click', () => {
@@ -586,7 +623,7 @@
 
   function closeHelp() {
     helpDialog.hidden = true;
-    textarea.focus();
+    editor.focus();
   }
 
   $('help-btn').addEventListener('click', () => {
@@ -794,9 +831,10 @@
   }
 
   async function save() {
-    const text = textarea.value;
+    const html = snapshot();
     try {
-      const body = filePassword !== null ? ENC_HEADER + await encryptText(filePassword, text) : storedText(text, fileName);
+      const content = contentToBody(fileName);
+      const body = filePassword !== null ? ENC_HEADER + await encryptText(filePassword, content) : content;
       if (dirHandle) {
         if (fileName !== savedName && await fileExists(dirHandle, fileName) && !confirm(`"${fileName}" already exists. Replace it?`)) return;
         const handle = await dirHandle.getFileHandle(fileName, { create: true });
@@ -807,10 +845,11 @@
       } else {
         downloadFile(fileName, body);
       }
-      lastSaved = text;
+      lastSaved = html;
       refresh();
       refreshSidebar();
-      setStatus(dirHandle ? `Saved ${dirPath}/${fileName}` : `Downloaded ${fileName}`);
+      const kept = extOf(fileName) !== '.rtf' && hasFormatting() ? ' (formatting is kept only in .rtf)' : '';
+      setStatus(`${dirHandle ? `Saved ${dirPath}/${fileName}` : `Downloaded ${fileName}`}${kept}`);
     } catch (err) {
       if (err.name !== 'AbortError') setStatus(`Save failed: ${err.message}`, true);
     }
@@ -822,8 +861,8 @@
   });
 
   // ---------- eventos ----------
-  textarea.addEventListener('input', onTyping);
-  textarea.addEventListener('keydown', e => {
+  editor.addEventListener('input', onTyping);
+  editor.addEventListener('keydown', e => {
     // Enter sem Shift não envia nada; Cmd/Ctrl+Enter salva
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -831,6 +870,70 @@
     }
   });
   window.addEventListener('resize', autoGrow);
+
+  // Colar entra só como texto: a formatação de outros sites não vai para a nota
+  editor.addEventListener('paste', e => {
+    e.preventDefault();
+    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+  });
+
+  // ---------- formatação do texto (modo edição) ----------
+  // Os botões mudam a seleção do editor; a última seleção dentro do editor é guardada
+  // porque o foco vai para o seletor de fonte ou para a paleta de cores
+  let editorRange = null;
+  const FORMAT_STATE = {
+    bold: 'fmt-bold', italic: 'fmt-italic', strikeThrough: 'fmt-strike',
+    justifyLeft: 'fmt-left', justifyCenter: 'fmt-center', justifyRight: 'fmt-right', justifyFull: 'fmt-justify',
+  };
+
+  function syncFormatBar() {
+    if (mode !== 'edit') return;
+    for (const [command, id] of Object.entries(FORMAT_STATE)) {
+      $(id).classList.toggle('on', document.queryCommandState(command));
+    }
+  }
+
+  function rememberSelection() {
+    const sel = window.getSelection();
+    if (sel.rangeCount && editor.contains(sel.anchorNode)) editorRange = sel.getRangeAt(0).cloneRange();
+  }
+
+  document.addEventListener('selectionchange', () => {
+    rememberSelection();
+    syncFormatBar();
+  });
+
+  // Aplica um comando de formatação na seleção. Com a seleção vazia, vale para o que for digitado
+  function applyFormat(command, value = null) {
+    if (mode !== 'edit') return;
+    editor.focus();
+    if (editorRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(editorRange);
+    }
+    document.execCommand('styleWithCSS', false, false); // fonte, cor e tamanho viram <font>, lidos pelo rtf.js
+    document.execCommand(command, false, value);
+    rememberSelection(); // o comando troca os nós do texto; a seleção guardada precisa acompanhar
+    syncFormatBar();
+  }
+
+  for (const [id, command] of [
+    ['fmt-bold', 'bold'], ['fmt-italic', 'italic'], ['fmt-strike', 'strikeThrough'],
+    ['fmt-left', 'justifyLeft'], ['fmt-center', 'justifyCenter'], ['fmt-right', 'justifyRight'], ['fmt-justify', 'justifyFull'],
+  ]) {
+    const btn = $(id);
+    // mousedown sem padrão mantém a seleção do texto ao clicar no botão
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', () => applyFormat(command));
+  }
+
+  const fontSelect = $('fmt-font');
+  const sizeSelect = $('fmt-size');
+  const colorInput = $('fmt-color');
+  fontSelect.addEventListener('change', () => fontSelect.value && applyFormat('fontName', fontSelect.value));
+  sizeSelect.addEventListener('change', () => sizeSelect.value && applyFormat('fontSize', sizeSelect.value));
+  colorInput.addEventListener('input', () => applyFormat('foreColor', colorInput.value));
 
   newBtn.addEventListener('click', newNote);
   undoBtn.addEventListener('click', undo);
@@ -1248,5 +1351,5 @@
   requestAnimationFrame(frame);
   refresh();
   refreshSidebar();
-  textarea.focus();
+  editor.focus();
 })();

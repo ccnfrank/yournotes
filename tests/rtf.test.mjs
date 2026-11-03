@@ -32,3 +32,28 @@ test('textToRtf e rtfToText são inversos para texto com acentos, quebras e sím
 test('textToRtf normaliza quebras de linha do Windows', () => {
   assert.equal(Rtf.rtfToText(Rtf.textToRtf('a\r\nb')), 'a\nb');
 });
+
+test('rtfToHtml mantém negrito, itálico, riscado, fonte, tamanho e cor', () => {
+  const raw = String.raw`{\rtf1{\fonttbl{\f0 Arial;}{\f1 Georgia;}}{\colortbl;\red255\green0\blue0;}\f0\fs24 a \b b\b0 \i\strike c\i0\strike0 \cf1\f1\fs36 d\par}`;
+  assert.equal(
+    Rtf.rtfToHtml(raw),
+    '<div><span style="font-family:\'Arial\';font-size:12pt">a </span>'
+      + '<span style="font-family:\'Arial\';font-size:12pt"><b>b</b></span>'
+      + '<span style="font-family:\'Arial\';font-size:12pt"><i><s>c</s></i></span>'
+      + '<span style="color:#ff0000;font-family:\'Georgia\';font-size:18pt">d</span></div>',
+  );
+});
+
+test('rtfToHtml aplica o alinhamento de cada parágrafo e escapa o HTML', () => {
+  const raw = String.raw`{\rtf1 \qc centro \& <x>\par \qj justo\par \ql\par}`;
+  assert.equal(
+    Rtf.rtfToHtml(raw),
+    '<div style="text-align:center">centro &amp; &lt;x&gt;</div>'
+      + '<div style="text-align:justify">justo</div><div><br></div>',
+  );
+});
+
+test('rtfToText continua sem a formatação', () => {
+  const raw = String.raw`{\rtf1{\colortbl;\red1\green2\blue3;}\cf1 \b Oi\b0\par x}`;
+  assert.equal(Rtf.rtfToText(raw), 'Oi\nx');
+});
