@@ -38,7 +38,50 @@
           </button>
         </div>
         <form class="composer" id="composer" autocomplete="off">
-          <textarea id="text" rows="1" spellcheck="false" placeholder="write your note" aria-label="Note"></textarea>
+          <div class="fmt-bar" id="fmt-bar" role="toolbar" aria-label="Text formatting">
+            <select id="fmt-font" class="fmt-select" title="Font" aria-label="Font">
+              <option value="">font</option>
+              <option value="Arial">Arial</option>
+              <option value="Helvetica">Helvetica</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Trebuchet MS">Trebuchet MS</option>
+            </select>
+            <select id="fmt-size" class="fmt-select fmt-size" title="Font size" aria-label="Font size">
+              <option value="">size</option>
+              <option value="1">8</option>
+              <option value="2">10</option>
+              <option value="3">12</option>
+              <option value="4">14</option>
+              <option value="5">18</option>
+              <option value="6">24</option>
+              <option value="7">36</option>
+            </select>
+            <label class="fmt-color" title="Font colour">
+              <span aria-hidden="true">A</span>
+              <input type="color" id="fmt-color" value="#000000" aria-label="Font colour">
+            </label>
+            <span class="fmt-sep" aria-hidden="true"></span>
+            <button type="button" class="fmt-btn" id="fmt-bold" title="Bold (⌘B)" aria-label="Bold"><b>B</b></button>
+            <button type="button" class="fmt-btn" id="fmt-italic" title="Italic (⌘I)" aria-label="Italic"><i>I</i></button>
+            <button type="button" class="fmt-btn" id="fmt-strike" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+            <span class="fmt-sep" aria-hidden="true"></span>
+            <button type="button" class="fmt-btn" id="fmt-left" title="Align left" aria-label="Align left">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg>
+            </button>
+            <button type="button" class="fmt-btn" id="fmt-center" title="Align centre" aria-label="Align centre">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg>
+            </button>
+            <button type="button" class="fmt-btn" id="fmt-right" title="Align right" aria-label="Align right">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg>
+            </button>
+            <button type="button" class="fmt-btn" id="fmt-justify" title="Justify" aria-label="Justify">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            </button>
+          </div>
+          <div id="text" class="editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note" spellcheck="false" data-placeholder="write your note"></div>
           <div class="composer-bar">
             <div class="left-tools">
               <button type="button" class="icon-btn" id="new" title="New note (⌘N)" aria-label="New note">
@@ -125,6 +168,15 @@
         <input id="file-name" type="text" spellcheck="false">
       </label>
 
+      <label class="field">
+        <span>Format</span>
+        <select id="file-format" aria-label="File format">
+          <option value=".txt">.txt, plain text</option>
+          <option value=".md">.md, Markdown text</option>
+          <option value=".rtf">.rtf, keeps the formatting</option>
+        </select>
+      </label>
+
       <ul class="file-list" id="file-list" aria-label="Notes in folder"></ul>
       <div class="status" id="location-status"></div>
 
@@ -201,7 +253,7 @@
             <li>The text box in the editor is where you write. It is 400 px tall.</li>
             <li>Press <b>+</b> (or <kbd>⌘N</kbd>) to start a new empty note. If the current note has unsaved changes, you are asked first.</li>
             <li>A new note has no file yet. Save it to give it a name and a place in a folder.</li>
-            <li>Notes can be <b>.txt</b>, <b>.md</b>, <b>.text</b>, <b>.log</b> or <b>.rtf</b>. An <b>.rtf</b> note opens as plain text, and its formatting (bold, fonts, colours) is not kept when you save it.</li>
+            <li>Notes can be <b>.txt</b>, <b>.md</b>, <b>.text</b>, <b>.log</b> or <b>.rtf</b>.</li>
           </ul>
         </section>
 
@@ -210,10 +262,21 @@
           <ul>
             <li>Open the notes window with <kbd>⌘O</kbd> (Mac) or <kbd>Ctrl+O</kbd> (Windows and Linux), then choose a folder with <b>Folder…</b>, or with <b>Choose…</b> in the save window. Folders need Chrome or Edge. Other browsers download the file instead.</li>
             <li>Press the <b>save</b> arrow (or <kbd>⌘S</kbd>) to save into the folder. <kbd>⇧⌘S</kbd> opens the save window, where you can pick the folder and the name.</li>
-            <li>Type a name in <b>Name</b>. If you leave out the extension, <b>.txt</b> is added. The app reads and writes <b>.txt</b>, <b>.md</b>, <b>.text</b> and <b>.log</b> files.</li>
+            <li>Type a name in <b>Name</b>. If you leave out the extension, the format chosen in <b>Format</b> is added. The app reads and writes <b>.txt</b>, <b>.md</b>, <b>.text</b>, <b>.log</b> and <b>.rtf</b> files.</li>
+            <li><b>Format</b> exports the note as <b>.txt</b>, <b>.md</b> or <b>.rtf</b>. Typing an extension in <b>Name</b> changes the format too.</li>
             <li><b>New folder</b> creates a subfolder inside the current folder and saves there from then on.</li>
             <li><b>Open file…</b> opens a text file from your computer, in any browser.</li>
             <li>Once a note has a file in the folder, it is <b>saved automatically</b> one second after you stop typing, while the note is in edit mode.</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h3>Formatting</h3>
+          <ul>
+            <li>In edit mode, the bar above the text sets the <b>font</b>, the <b>size</b>, the text <b>colour</b>, <b>bold</b>, <b>italic</b>, <b>strikethrough</b> and the alignment: left, centre, right or <b>justify</b>.</li>
+            <li>The formatting applies to the selected text. With nothing selected, it applies to what you type next.</li>
+            <li>Formatting is kept in <b>.rtf</b> notes. <b>.txt</b> and <b>.md</b> notes are saved as plain text, so their formatting is not saved; a warning appears when you save.</li>
+            <li>Text pasted from other programs or websites is pasted as plain text.</li>
           </ul>
         </section>
 

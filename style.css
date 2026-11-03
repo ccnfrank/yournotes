@@ -184,6 +184,122 @@ body::after {
 
 .composer.reading #text::placeholder { opacity: 0; }
 
+/* editor de texto rico: quebras e espaços são mantidos; o placeholder aparece com o texto vazio */
+.editor {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.editor.empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.composer.reading .editor.empty::before { content: none; }
+
+/* barra de formatação: só no modo edição */
+.fmt-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.composer.reading .fmt-bar { display: none; }
+
+.fmt-select {
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  max-width: 150px;
+}
+
+.fmt-select:focus-visible,
+.fmt-btn:focus-visible,
+.fmt-color:focus-within {
+  outline: 2px solid var(--send-icon);
+  outline-offset: 1px;
+}
+
+.fmt-size { width: 64px; }
+
+.fmt-color {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+/* a cor fica num campo transparente por cima da letra A, que mostra a cor escolhida */
+.fmt-color input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+}
+
+.fmt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.fmt-btn:hover { background: rgb(127 127 127 / 0.14); }
+
+.fmt-btn.on {
+  border-color: var(--send-icon);
+  color: var(--send-icon);
+}
+
+.fmt-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.fmt-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--line);
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
@@ -514,7 +630,8 @@ body::after {
 
 .field[hidden] { display: none; }
 
-.field input {
+.field input,
+.field select {
   min-width: 0;
   padding: 7px 10px;
   background: var(--bg);
@@ -526,7 +643,8 @@ body::after {
   transition: border-color 0.25s;
 }
 
-.field input:focus { border-color: var(--send-icon); }
+.field input:focus,
+.field select:focus { border-color: var(--send-icon); }
 
 .row {
   display: flex;
